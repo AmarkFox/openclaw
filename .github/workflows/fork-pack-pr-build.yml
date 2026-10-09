@@ -3,12 +3,14 @@
 name: Fork pack PR build
 
 on:
+  push:
+    branches: [ci/pack-pr167798]
+    paths: [.github/workflows/fork-pack-pr-build.yml]
   workflow_dispatch:
-    inputs:
-      ref:
-        description: Branch, tag or SHA to package
-        required: true
-        default: feat/compat-append-only-runtime-context
+
+env:
+  # Exact PR head to package; bump to rebuild.
+  PACKAGE_REF: 779ba36f348bc2ce4c8ca618efebaf18ff1b7dab
 
 permissions:
   contents: read
@@ -20,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ env.PACKAGE_REF }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
