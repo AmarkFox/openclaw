@@ -1,0 +1,49 @@
+# Fork-only helper: builds the canonical OpenClaw npm package for one ref so it can be
+# installed on a small self-hosted gateway that cannot run the full build itself.
+name: Fork pack PR build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or SHA to package
+        required: true
+        default: feat/compat-append-only-runtime-context
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - name: Install dependencies
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Build and pack
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: |
+          node scripts/package-openclaw-for-docker.mjs \
+            --allow-unreleased-changelog \
+            --source-dir . \
+            --output-dir "$RUNNER_TEMP/pack" \
+            --output-name openclaw-pr-build.tgz
+          git rev-parse HEAD > "$RUNNER_TEMP/pack/SOURCE_SHA"
+          (cd "$RUNNER_TEMP/pack" && sha256sum openclaw-pr-build.tgz > SHA256SUMS && cat SHA256SUMS SOURCE_SHA)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openclaw-pr-build
+          path: ${{ runner.temp }}/pack/
+          retention-days: 14
