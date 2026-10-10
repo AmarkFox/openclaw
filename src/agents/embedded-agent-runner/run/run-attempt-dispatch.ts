@@ -40,7 +40,10 @@ import {
   projectEmbeddedMessageContext,
   projectTrajectorySessionTarget,
 } from "./shared-run-context.js";
-import { resolveSkillWorkshopReviewGithubSurface } from "./skill-workshop-review-surface.js";
+import {
+  resolveSkillWorkshopReviewGithubSurface,
+  resolveSkillWorkshopReviewPromptAdditions,
+} from "./skill-workshop-review-surface.js";
 import { MAX_BEFORE_AGENT_FINALIZE_REVISIONS } from "./terminal-retry-state.js";
 
 /** Prepares the selected runtime and dispatches an attempt under its admitted lifecycle. */
@@ -288,18 +291,20 @@ export async function prepareAndDispatchEmbeddedRunAttempt(
     params.execOverrides ??= {};
     params.execOverrides.mode = resolveSessionPermissionExecMode({ mode: params.permissionMode });
   }
-  const { extraSystemPrompt, gitCoauthorPrompt } = await prepareAttemptSystemPromptAdditions({
-    agentId: workspaceResolution.agentId,
-    authProfileId: runtime.lastProfileId,
-    config: params.config,
-    extraSystemPrompt: params.extraSystemPrompt,
-    modelId,
-    provider,
-    sessionId,
-    sessionKey: params.sessionKey,
-    storePath: params.sessionTarget?.storePath,
-    toolsAllow: params.toolsAllow,
-  });
+  const { extraSystemPrompt, gitCoauthorPrompt } =
+    resolveSkillWorkshopReviewPromptAdditions(params) ??
+    (await prepareAttemptSystemPromptAdditions({
+      agentId: workspaceResolution.agentId,
+      authProfileId: runtime.lastProfileId,
+      config: params.config,
+      extraSystemPrompt: params.extraSystemPrompt,
+      modelId,
+      provider,
+      sessionId,
+      sessionKey: params.sessionKey,
+      storePath: params.sessionTarget?.storePath,
+      toolsAllow: params.toolsAllow,
+    }));
   assertActiveRun();
   let skillsSnapshot = resolveSessionSkillResourceSnapshot(params.skillsSnapshot);
   let skillReferencePaths = pluginSandbox?.readOnlyResourceMounts?.map((mount) => ({

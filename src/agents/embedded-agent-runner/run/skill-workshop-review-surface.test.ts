@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { getPluginToolMeta, setPluginToolMeta } from "../../../plugins/tool-metadata.js";
 import type { AnyAgentTool } from "../../tools/common.js";
 import { gateToolExecution } from "./attempt-tool-catalog.js";
-import { resolveSkillWorkshopReviewGithubSurface } from "./skill-workshop-review-surface.js";
+import {
+  resolveSkillWorkshopReviewGithubSurface,
+  resolveSkillWorkshopReviewPromptAdditions,
+} from "./skill-workshop-review-surface.js";
 
 function fakeTool(name: string): AnyAgentTool {
   return {
@@ -71,5 +74,30 @@ describe("Workshop review tool surface parity", () => {
         skillWorkshopReviewGithubPublicationAvailable: true,
       }),
     ).toEqual({});
+  });
+
+  it("reuses the reviewed turn's prepared prompt additions for detached reviews only", () => {
+    const prepared = {
+      extraSystemPrompt: "Inbound context\n\nCreate a card with progress_card only for ...",
+      gitCoauthorPrompt: "Co-authored-by: Example <bot@example.com>",
+    };
+
+    expect(
+      resolveSkillWorkshopReviewPromptAdditions({
+        ...prepared,
+        skillWorkshopReviewOf: "agent:main:chat",
+        sessionPersistence: "detached",
+      }),
+    ).toEqual(prepared);
+    expect(
+      resolveSkillWorkshopReviewPromptAdditions({ ...prepared, sessionPersistence: "detached" }),
+    ).toBeUndefined();
+    expect(
+      resolveSkillWorkshopReviewPromptAdditions({
+        ...prepared,
+        skillWorkshopReviewOf: "agent:main:chat",
+        sessionPersistence: "durable",
+      }),
+    ).toBeUndefined();
   });
 });
