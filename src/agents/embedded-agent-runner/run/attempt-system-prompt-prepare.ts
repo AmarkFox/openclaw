@@ -174,7 +174,10 @@ export async function prepareEmbeddedAttemptSystemPrompt(params: {
       ...(attempt.preparedModelRuntime && Object.hasOwn(attempt.preparedModelRuntime, "repoRoot")
         ? { preparedRepoRoot: attempt.preparedModelRuntime.repoRoot }
         : {}),
-      sessionKey: attempt.sessionKey,
+      // A Workshop review forks the reviewed conversation. Render that session's
+      // identity so the prompt keeps the foreground's cached prefix; storage, policy
+      // and delivery still use the review's private session.
+      sessionKey: attempt.skillWorkshopReviewOf?.trim() || attempt.sessionKey,
       sessionId: attempt.sessionId,
       model: `${attempt.provider}/${attempt.modelId}`,
       channel: attempt.messageChannel ?? attempt.messageProvider,

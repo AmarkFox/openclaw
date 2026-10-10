@@ -70,7 +70,10 @@ async function preparePermissionPrompt(
   isRawModelRun = false,
   thinkLevel?: EmbeddedRunAttemptParams["thinkLevel"],
   requireExplicitMessageTarget?: boolean,
-  session?: Pick<EmbeddedRunAttemptParams, "sessionKey" | "sandboxSessionKey">,
+  session?: Pick<
+    EmbeddedRunAttemptParams,
+    "sessionKey" | "sandboxSessionKey" | "skillWorkshopReviewOf"
+  >,
   skills?: { prompt: string; toolsAllow?: string[]; initialToolNames?: string[] },
   webSearchUnconfigured?: () => boolean,
 ) {
@@ -288,6 +291,24 @@ describe("buildAttemptSystemPrompt", () => {
       }
     },
   );
+
+  it("renders the reviewed session identity in a Workshop review prompt", async () => {
+    const reviewed = "agent:main:reviewed-chat";
+    const review = "agent:main:internal-session-effects:skill-workshop-review_test";
+    const foreground = await preparePermissionPrompt(false, undefined, undefined, {
+      sessionKey: reviewed,
+      sandboxSessionKey: reviewed,
+    });
+    const { prepared } = await preparePermissionPrompt(false, undefined, undefined, {
+      sessionKey: review,
+      sandboxSessionKey: reviewed,
+      skillWorkshopReviewOf: reviewed,
+    });
+
+    expect(foreground.prepared.systemPromptText).toContain(`session=${reviewed}`);
+    expect(prepared.systemPromptText).toBe(foreground.prepared.systemPromptText);
+    expect(prepared.systemPromptText).not.toContain(review);
+  });
 
   it("keeps model instructions identical when only reasoning effort changes", async () => {
     const prompts = [];

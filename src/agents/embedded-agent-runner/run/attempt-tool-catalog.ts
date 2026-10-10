@@ -2,6 +2,7 @@ import {
   isCodeModeDiagnosticEnabled,
   logCodeModeDiagnostic,
 } from "../../../logging/code-mode-diagnostic.js";
+import { copyPluginToolMeta } from "../../../plugins/tool-metadata.js";
 import {
   copyAgentToolAvailability,
   finalizeAgentToolAvailability,
@@ -246,26 +247,29 @@ export async function prepareEmbeddedAttemptToolCatalog(input: {
   });
 }
 
-function gateToolExecution(
+export function gateToolExecution(
   tools: readonly AnyAgentTool[],
   allowNames: readonly string[],
 ): AnyAgentTool[] {
   const executionAllowed = createToolExecutionMatcher(allowNames);
-  return tools.map((tool) =>
-    executionAllowed(tool.name) || TOOL_SEARCH_CONTROL_TOOL_NAMES.has(tool.name)
-      ? tool
-      : markAgentToolExecutionUnavailable(
-          copyAgentToolAvailability(tool, {
-            ...tool,
-            // Preparation can perform work too; a denied call must not enter the source path.
-            prepareArguments: undefined,
-            prepareBeforeToolCallParams: undefined,
-            finalizeBeforeToolCallParams: undefined,
-            // A denial is guidance for the model, not a tool failure that fails the run;
-            // a failure-like `status` detail would reclassify it as an error.
-            execute: async () =>
-              textResult(formatToolExecutionGatedMessage(tool.name, allowNames), { gated: true }),
-          }),
-        ),
-  );
+  return tools.map((tool) => {
+    if (executionAllowed(tool.name) || TOOL_SEARCH_CONTROL_TOOL_NAMES.has(tool.name)) {
+      return tool;
+    }
+    const gated: AnyAgentTool = {
+      ...tool,
+      // Preparation can perform work too; a denied call must not enter the source path.
+      prepareArguments: undefined,
+      prepareBeforeToolCallParams: undefined,
+      finalizeBeforeToolCallParams: undefined,
+      // A denial is guidance for the model, not a tool failure that fails the run;
+      // a failure-like `status` detail would reclassify it as an error.
+      execute: async () =>
+        textResult(formatToolExecutionGatedMessage(tool.name, allowNames), { gated: true }),
+    };
+    // Gating changes execution only. Keep plugin/MCP ownership so the tool-search
+    // directory renders the same owner labels as an ungated run of this catalog.
+    copyPluginToolMeta(tool, gated);
+    return markAgentToolExecutionUnavailable(copyAgentToolAvailability(tool, gated));
+  });
 }

@@ -120,6 +120,12 @@ export type RunEmbeddedAgentParams = {
    * view, and changes credit "review" with this originating session key as their provenance.
    */
   skillWorkshopReviewOf?: string;
+  /**
+   * The reviewed turn's observed GitHub publication availability. A detached review does not
+   * probe its own session; this mirrors only the reviewed turn's tool surface (the review's
+   * execution allowlist still denies GitHub tools) so its prompt keeps the cached prefix.
+   */
+  skillWorkshopReviewGithubPublicationAvailable?: boolean;
   skillLibraryAuthoring?: SkillLibraryAuthoringCapability;
   /** Explicit system prompt mode override for trusted callers. */
   promptMode?: PromptMode;

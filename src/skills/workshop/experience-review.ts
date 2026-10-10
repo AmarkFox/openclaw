@@ -213,6 +213,8 @@ async function runSkillExperienceReviewInner(candidate: ExperienceReviewCandidat
       sessionId: reviewSession.sessionId,
       sessionKey: reviewSession.sessionKey,
       skillWorkshopReviewOf: sessionKey,
+      skillWorkshopReviewGithubPublicationAvailable:
+        foregroundPromptContext.githubPublicationAvailable,
       // Delivery authority closes with the foreground turn and cannot be reused by this fork.
       messageActionTurnCapability: undefined,
       sessionManager,

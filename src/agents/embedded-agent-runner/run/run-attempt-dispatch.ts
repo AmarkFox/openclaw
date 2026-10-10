@@ -40,6 +40,7 @@ import {
   projectEmbeddedMessageContext,
   projectTrajectorySessionTarget,
 } from "./shared-run-context.js";
+import { resolveSkillWorkshopReviewGithubSurface } from "./skill-workshop-review-surface.js";
 import { MAX_BEFORE_AGENT_FINALIZE_REVISIONS } from "./terminal-retry-state.js";
 
 /** Prepares the selected runtime and dispatches an attempt under its admitted lifecycle. */
@@ -614,6 +615,7 @@ export async function prepareAndDispatchEmbeddedRunAttempt(
     modelRun: params.modelRun,
     disableTrajectory: params.disableTrajectory,
     skillWorkshopReviewOf: params.skillWorkshopReviewOf,
+    ...resolveSkillWorkshopReviewGithubSurface(params),
     skillLibraryAuthoring: params.skillLibraryAuthoring,
     promptMode: params.promptMode,
     ownerNumbers: params.ownerNumbers,
