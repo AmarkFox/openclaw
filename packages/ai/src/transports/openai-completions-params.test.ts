@@ -614,9 +614,11 @@ describe("OpenAI completions compatibility and tools", () => {
       [
         { ...proxy, compat: { strictMessageKeys: true } },
         { ...historyContext(), tools: [] },
+        // No tools are sent, so the settled call history replays as text instead of
+        // orphaned tool messages that strict backends cannot pair.
         [
-          { role: "assistant", content: null },
-          { role: "tool", content: "sunny" },
+          { role: "assistant", content: "[Assistant tool call]: lookup_weather({})" },
+          { role: "user", content: "[Tool result: lookup_weather]:\nsunny" },
         ],
       ],
     ];

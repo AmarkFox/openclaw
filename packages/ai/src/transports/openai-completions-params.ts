@@ -47,6 +47,7 @@ import {
   flattenCompletionMessagesToStringContent,
   stripCompletionMessagesToRoleContent,
 } from "./openai-completions-string-content.js";
+import { rewriteCompletionToolHistoryAsText } from "./openai-completions-tool-history-text.js";
 import {
   getCompat,
   resolveOpenAIStrictToolFlagWithDiagnostics,
@@ -385,6 +386,24 @@ export function buildOpenAICompletionsRequest(
       delete params.tools;
       delete params.tool_choice;
     }
+  }
+  if (
+    params.tools === undefined &&
+    (endpointClass === "custom" || endpointClass === "local") &&
+    hasToolCallHistory(context.messages)
+  ) {
+    // A request without tool declarations must not carry tool-call blocks: generic proxies
+    // such as LiteLLM in front of Bedrock Converse reject that shape before generating.
+    // Vendor endpoints keep native replay (for example, Gemini thought signatures).
+    // Rewrite before restrictive-backend shaping so stripped keys cannot drop the calls.
+    let rewritten = rewriteCompletionToolHistoryAsText(convertedMessages, context);
+    if (managedCompat?.strictMessageKeys) {
+      rewritten = stripCompletionMessagesToRoleContent(rewritten);
+    }
+    if (managedCompat?.requiresStringContent) {
+      rewritten = flattenCompletionMessagesToStringContent(rewritten);
+    }
+    params.messages = rewritten;
   }
   if (policy.mode === "direct" && compat.cacheControlFormat === "anthropic") {
     applyCompletionsAnthropicCacheControl(
