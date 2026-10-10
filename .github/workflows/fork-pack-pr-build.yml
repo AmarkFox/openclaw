@@ -10,7 +10,7 @@ on:
 
 env:
   # Exact PR head to package; bump to rebuild.
-  PACKAGE_REF: 747b9064223f38ec8b8e0309ca5cf06d283e5dfa
+  PACKAGE_REF: 80d3fb4abd42c240d2b614fb45654c7a6a82e9ad
 
 permissions:
   contents: read
@@ -33,6 +33,10 @@ jobs:
         run: |
           corepack enable
           pnpm install --frozen-lockfile
+      - name: Type-check core
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: pnpm tsgo:core
       - name: Build and pack
         env:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
