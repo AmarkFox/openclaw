@@ -10,7 +10,7 @@ on:
 
 env:
   # Exact PR head to package; bump to rebuild.
-  PACKAGE_REF: 80d3fb4abd42c240d2b614fb45654c7a6a82e9ad
+  PACKAGE_REF: bd75d5880b0879836a642d818bd08607140d33df
 
 permissions:
   contents: read
